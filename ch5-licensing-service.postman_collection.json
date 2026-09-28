@@ -1,9 +1,11 @@
 {
   "info": {
-    "_postman_id": "aa4c15b8-49ca-44a8-bd4a-a98c27e45827",
+    "_postman_id": "4a140223-9d2c-47f3-8f3a-18a5f46a040b",
     "name": "Ch5 Licensing Service + Config Server",
     "description": "Spring Microservices in Action ch. 5. Build with `mvn clean package`, start with `docker compose -f docker/docker-compose.yml up`. Run the Licensing Service folder top to bottom: Create saves {{createdLicenseId}} used by the following requests; Encrypt saves {{cipherText}} for Decrypt.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58204556",
+    "_collection_link": "https://go.postman.co/collection/58204556-4a140223-9d2c-47f3-8f3a-18a5f46a040b?source=collection_link"
   },
   "item": [
     {
@@ -24,6 +26,81 @@
                 "health"
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Decrypt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{cipherText}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{configServerUrl}}/decrypt",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "decrypt"
+              ]
+            },
+            "description": "Run Encrypt first. Round-trips the cipher text back to plain text."
+          },
+          "response": []
+    },
+        {
+          "name": "Encrypt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('cipherText', pm.response.text());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "postgres",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{configServerUrl}}/encrypt",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "encrypt"
+              ]
+            },
+            "description": "Encrypts the body with the symmetric key in bootstrap.yml. Saves the result to {{cipherText}}."
           },
           "response": []
         },
@@ -101,81 +178,6 @@
             "description": "Test profile added for the assignment. Password 'pass' is stored encrypted and decrypted by the config server."
           },
           "response": []
-        },
-        {
-          "name": "Encrypt",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "text/plain"
-              }
-            ],
-            "url": {
-              "raw": "{{configServerUrl}}/encrypt",
-              "host": [
-                "{{configServerUrl}}"
-              ],
-              "path": [
-                "encrypt"
-              ]
-            },
-            "description": "Encrypts the body with the symmetric key in bootstrap.yml. Saves the result to {{cipherText}}.",
-            "body": {
-              "mode": "raw",
-              "raw": "postgres",
-              "options": {
-                "raw": {
-                  "language": "text"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.collectionVariables.set('cipherText', pm.response.text());"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Decrypt",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "text/plain"
-              }
-            ],
-            "url": {
-              "raw": "{{configServerUrl}}/decrypt",
-              "host": [
-                "{{configServerUrl}}"
-              ],
-              "path": [
-                "decrypt"
-              ]
-            },
-            "description": "Run Encrypt first. Round-trips the cipher text back to plain text.",
-            "body": {
-              "mode": "raw",
-              "raw": "{{cipherText}}",
-              "options": {
-                "raw": {
-                  "language": "text"
-                }
-              }
-            }
-          },
-          "response": []
         }
       ]
     },
@@ -243,6 +245,17 @@
         },
         {
           "name": "Create license",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('createdLicenseId', pm.response.json().licenseId);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -251,6 +264,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Software product\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"productName\": \"Ostock\",\n  \"licenseType\": \"full\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license",
               "host": [
@@ -263,32 +285,12 @@
                 "license"
               ]
             },
-            "description": "Service generates the licenseId. Saves it to {{createdLicenseId}} for the following requests.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"description\": \"Software product\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"productName\": \"Ostock\",\n  \"licenseType\": \"full\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Service generates the licenseId. Saves it to {{createdLicenseId}} for the following requests."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.collectionVariables.set('createdLicenseId', pm.response.json().licenseId);"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
-          "name": "Get license",
+          "name": "Get Created license",
           "request": {
             "method": "GET",
             "header": [],
@@ -304,7 +306,8 @@
                 "license",
                 "{{createdLicenseId}}"
               ]
-            }
+            },
+            "description": "Run Create license first. Reads the license whose id was saved to {{createdLicenseId}} by the Create license post-response script."
           },
           "response": []
         },
@@ -318,6 +321,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licenseId\": \"{{createdLicenseId}}\",\n  \"description\": \"Software product (updated)\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"productName\": \"Ostock\",\n  \"licenseType\": \"complete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license",
               "host": [
@@ -330,15 +342,7 @@
                 "license"
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"licenseId\": \"{{createdLicenseId}}\",\n  \"description\": \"Software product (updated)\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"productName\": \"Ostock\",\n  \"licenseType\": \"complete\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Run Create license first. Updates the license saved in {{createdLicenseId}}."
           },
           "response": []
         },
@@ -359,7 +363,8 @@
                 "license",
                 "{{createdLicenseId}}"
               ]
-            }
+            },
+            "description": "Run Create license first. Deletes the license saved in {{createdLicenseId}}."
           },
           "response": []
         }
