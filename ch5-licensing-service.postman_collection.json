@@ -1,0 +1,395 @@
+{
+  "info": {
+    "_postman_id": "aa4c15b8-49ca-44a8-bd4a-a98c27e45827",
+    "name": "Ch5 Licensing Service + Config Server",
+    "description": "Spring Microservices in Action ch. 5. Build with `mvn clean package`, start with `docker compose -f docker/docker-compose.yml up`. Run the Licensing Service folder top to bottom: Create saves {{createdLicenseId}} used by the following requests; Encrypt saves {{cipherText}} for Decrypt.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Config Server (8089)",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{configServerUrl}}/actuator/health",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "licensing-service / default",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{configServerUrl}}/licensing-service/default",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "licensing-service",
+                "default"
+              ]
+            },
+            "description": "Base properties from classpath:/config/licensing-service.properties"
+          },
+          "response": []
+        },
+        {
+          "name": "licensing-service / dev",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{configServerUrl}}/licensing-service/dev",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "licensing-service",
+                "dev"
+              ]
+            },
+            "description": "Dev profile layered over default. Password is decrypted server-side."
+          },
+          "response": []
+        },
+        {
+          "name": "licensing-service / prod",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{configServerUrl}}/licensing-service/prod",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "licensing-service",
+                "prod"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "licensing-service / test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{configServerUrl}}/licensing-service/test",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "licensing-service",
+                "test"
+              ]
+            },
+            "description": "Test profile added for the assignment. Password 'pass' is stored encrypted and decrypted by the config server."
+          },
+          "response": []
+        },
+        {
+          "name": "Encrypt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{configServerUrl}}/encrypt",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "encrypt"
+              ]
+            },
+            "description": "Encrypts the body with the symmetric key in bootstrap.yml. Saves the result to {{cipherText}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "postgres",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('cipherText', pm.response.text());"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Decrypt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{configServerUrl}}/decrypt",
+              "host": [
+                "{{configServerUrl}}"
+              ],
+              "path": [
+                "decrypt"
+              ]
+            },
+            "description": "Run Encrypt first. Round-trips the cipher text back to plain text.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{cipherText}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Licensing Service (8080)",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{licensingUrl}}/actuator/health",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actuator env",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{licensingUrl}}/actuator/env",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "env"
+              ]
+            },
+            "description": "Shows every property source, including the ones pulled from the config server."
+          },
+          "response": []
+        },
+        {
+          "name": "Get seeded license",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license/{{seedLicenseId}}",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "v1",
+                "organization",
+                "{{organizationId}}",
+                "license",
+                "{{seedLicenseId}}"
+              ]
+            },
+            "description": "Reads a license inserted by docker/data.sql. The comment field proves the active profile came from the config server."
+          },
+          "response": []
+        },
+        {
+          "name": "Create license",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "v1",
+                "organization",
+                "{{organizationId}}",
+                "license"
+              ]
+            },
+            "description": "Service generates the licenseId. Saves it to {{createdLicenseId}} for the following requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Software product\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"productName\": \"Ostock\",\n  \"licenseType\": \"full\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('createdLicenseId', pm.response.json().licenseId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get license",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license/{{createdLicenseId}}",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "v1",
+                "organization",
+                "{{organizationId}}",
+                "license",
+                "{{createdLicenseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update license",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "v1",
+                "organization",
+                "{{organizationId}}",
+                "license"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licenseId\": \"{{createdLicenseId}}\",\n  \"description\": \"Software product (updated)\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"productName\": \"Ostock\",\n  \"licenseType\": \"complete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete license",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{licensingUrl}}/v1/organization/{{organizationId}}/license/{{createdLicenseId}}",
+              "host": [
+                "{{licensingUrl}}"
+              ],
+              "path": [
+                "v1",
+                "organization",
+                "{{organizationId}}",
+                "license",
+                "{{createdLicenseId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "configServerUrl",
+      "value": "http://localhost:8089"
+    },
+    {
+      "key": "licensingUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "organizationId",
+      "value": "d898a142-de44-466c-8c88-9ceb2c2429d3"
+    },
+    {
+      "key": "seedLicenseId",
+      "value": "f2a9c9d4-d2c0-44fa-97fe-724d77173c62"
+    },
+    {
+      "key": "createdLicenseId",
+      "value": ""
+    },
+    {
+      "key": "cipherText",
+      "value": ""
+    }
+  ]
+}

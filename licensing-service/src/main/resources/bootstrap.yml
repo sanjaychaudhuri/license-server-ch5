@@ -1,0 +1,15 @@
+spring:
+    application:
+     name: licensing-service 
+    profiles:
+      active: dev
+    cloud:
+        config: 
+            uri: http://configserver:8071
+            # Do not start without configuration; keep retrying while the config server boots
+            fail-fast: true
+            retry:
+              initial-interval: 1000
+              max-interval: 5000
+              multiplier: 1.5
+              max-attempts: 30

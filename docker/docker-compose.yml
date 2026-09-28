@@ -1,0 +1,73 @@
+version: '2.1'
+services:
+  database:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      # 'pass' matches the licensing-service test profile. Use POSTGRES_PASSWORD=postgres with PROFILE=dev
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-pass}"
+      POSTGRES_DB:       "ostock_dev"
+    volumes:
+        - ./init.sql:/docker-entrypoint-initdb.d/1-init.sql
+        - ./data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    networks:
+      backend:
+        aliases:
+          - "database"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  configserver:
+    image: ostock/configserver:0.0.1-SNAPSHOT
+    build:
+      context: ../configserver
+      args:
+        JAR_FILE: target/configserver-0.0.1-SNAPSHOT.jar
+    ports:
+       - "8089:8089"
+    environment:
+      # Overrides server.port from bootstrap.yml; env vars take precedence over yml
+      SERVER_PORT: "8089"
+      ENCRYPT_KEY: "fje83Ki8403Iod87dne7Yjsl3THueh48jfuO9j4U2hf64Lo"
+    networks:
+      backend:
+        aliases:
+          - "configserver"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8089/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  licensingservice:
+    image: ostock/licensing-service:0.0.2-SNAPSHOT
+    build:
+      context: ../licensing-service
+      args:
+        JAR_FILE: target/licensing-service-0.0.2-SNAPSHOT.jar
+    environment:
+      # Spring reads SPRING_PROFILES_ACTIVE; this selects licensing-service-test.properties on the config server
+      SPRING_PROFILES_ACTIVE: "${PROFILE:-test}"
+      PROFILE: "${PROFILE:-test}"
+      # Overrides spring.cloud.config.uri from bootstrap.yml
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:8089"
+      CONFIGSERVER_URI: "http://configserver:8089"
+      CONFIGSERVER_PORT:   "8089"
+      DATABASESERVER_PORT: "5432"
+      ENCRYPT_KEY:       "IMSYMMETRIC"
+    depends_on:
+      database:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+    ports:
+      - "${LICENSING_PORT:-8080}:8080"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
