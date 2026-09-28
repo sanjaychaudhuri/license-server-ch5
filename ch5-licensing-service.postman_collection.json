@@ -42,7 +42,7 @@
                 "default"
               ]
             },
-            "description": "Base properties from classpath:/config/licensing-service.properties"
+            "description": "Base properties from licensing-service.properties in the GitHub config repository. The response's version field is the commit hash."
           },
           "response": []
         },

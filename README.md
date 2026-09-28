@@ -49,8 +49,16 @@ This command will run our services using the docker-compose.yml file located in 
 
 If everything starts correctly you should see a bunch of Spring Boot information fly by on standard out.  At this point all of the services needed for the chapter code examples will be running.
 
+# Git-backed configuration
+The config server runs with the `git` profile and reads configuration from
+https://github.com/sanjaychaudhuri/license-server-ch5.git (see `configserver/src/main/resources/bootstrap.yml`:
+`uri`, `search-paths: configserver/src/main/resources/config`, `default-label: main`). The classpath copy of the
+property files is no longer used at runtime; a change takes effect only after it is committed and pushed to GitHub.
+Each config response carries the commit hash in its `version` field. After pushing a change, call
+`POST /actuator/refresh` on the licensing service to pick it up without a restart.
+
 # Profiles
-The config server holds `default`, `dev`, `prod` and `test` property files under `configserver/src/main/resources/config`.
+The config repository holds `default`, `dev`, `prod` and `test` property files under `configserver/src/main/resources/config`.
 `docker/docker-compose.yml` selects the profile through `SPRING_PROFILES_ACTIVE` (defaults to `test`) and starts Postgres with the
 matching password: the `test` profile uses password `pass`, stored encrypted in `licensing-service-test.properties`.
 
